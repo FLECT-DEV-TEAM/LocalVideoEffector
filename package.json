@@ -41,5 +41,8 @@
       "ts-node/register",
       "tsconfig-paths/register"
     ]
+  },
+  "dependencies": {
+    "@tensorflow-models/body-pix": "^2.0.5"
   }
 }
