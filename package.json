@@ -1,6 +1,6 @@
 {
   "name": "local-video-effector",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -16,7 +16,14 @@
     "type": "git",
     "url": "git+https://github.com/FLECT-DEV-TEAM/LocalVideoEffector.git"
   },
-  "keywords": ["ar", "vr", "virtaul background", "react", "tensorflow", "segmentation"],
+  "keywords": [
+    "ar",
+    "vr",
+    "virtaul background",
+    "react",
+    "tensorflow",
+    "segmentation"
+  ],
   "author": "Wataru Okada <wataru.okada@flect.co.jp> (https://qiita.com/wok)",
   "license": "Apache-2.0",
   "bugs": {
