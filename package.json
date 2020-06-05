@@ -1,0 +1,45 @@
+{
+  "name": "local-video-effector",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "ava -v ",
+    "dev": "ts-node src/index.ts",
+    "dev:watch": "ts-node-dev --respawn src/index.ts",
+    "clean": "rimraf dist/*",
+    "tsc": "tsc",
+    "build": "npm-run-all clean tsc",
+    "start": "node ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FLECT-DEV-TEAM/LocalVideoEffector.git"
+  },
+  "keywords": [],
+  "author": "Wataru Okada <wataru.okada@flect.co.jp> (https://qiita.com/wok)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/FLECT-DEV-TEAM/LocalVideoEffector/issues"
+  },
+  "homepage": "https://github.com/FLECT-DEV-TEAM/LocalVideoEffector#readme",
+  "devDependencies": {
+    "@types/node": "^14.0.11",
+    "ava": "^3.8.2",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^3.0.2",
+    "ts-node": "^8.10.2",
+    "ts-node-dev": "^1.0.0-pre.44",
+    "tsconfig-paths": "^3.9.0",
+    "typescript": "^3.9.5"
+  },
+  "ava": {
+    "extensions": [
+      "ts"
+    ],
+    "require": [
+      "ts-node/register",
+      "tsconfig-paths/register"
+    ]
+  }
+}
