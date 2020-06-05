@@ -87,7 +87,7 @@ then draw image.
     })
 ```
 
-Drawing
+Drawing. doEffect accepts the resolution in which this libary apply the effects. So, output image size is the same as this parametar. And the performance depends on this parameter.
 
 ```
   drawVideoCanvas = () => {
