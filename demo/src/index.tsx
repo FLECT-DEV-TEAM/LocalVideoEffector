@@ -20,7 +20,7 @@ sagaMiddleware.run(rootSaga);
 
 ReactDOM.render(
     <Provider store={store}>
-       <Connector />
+          <Connector />
     </Provider>
     ,document.getElementById('root'));
 

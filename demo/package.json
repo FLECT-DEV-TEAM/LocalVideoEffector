@@ -14,7 +14,7 @@
     "@types/react": "^16.9.34",
     "@types/react-dom": "^16.9.6",
     "@types/redux-actions": "^2.6.1",
-    "local-video-effector": "^1.0.11",
+    "local-video-effector": "^1.0.12",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-redux": "^7.2.0",

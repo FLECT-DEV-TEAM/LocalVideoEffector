@@ -28,7 +28,7 @@ import { LocalVideoEffectors } from 'local-video-effector'
  */
 class App extends React.Component {
   localCanvasRef = React.createRef<HTMLCanvasElement>()
-  localVideoEffectors = new LocalVideoEffectors()
+  localVideoEffectors = new LocalVideoEffectors(null)
   componentDidMount() {
     this.localVideoEffectors.cameraEnabled = true
     this.localVideoEffectors.virtualBackgroundEnabled = true
@@ -67,7 +67,7 @@ export default App;
 You should instansiate LocalVideoEffectors.
 
 ```
-localVideoEffectors = new LocalVideoEffectors()
+localVideoEffectors = new LocalVideoEffectors(null)
 ```
 
 ### componentDidMount
@@ -102,6 +102,30 @@ Drawing. doEffect accepts the resolution in which this libary apply the effects.
     requestAnimationFrame(() => this.drawVideoCanvas())
   }
 ```
+
+### Advanced
+#### Blur
+You can change blur with maskBlurAmount
+
+```
+this.localVideoEffectors.maskBlurAmount             = blur
+```
+
+https://virtual-background-bodypix.herokuapp.com/index.html?blur=2
+
+#### Model
+You can chnage model with constructor.
+Acceptable parameter is "null", "ModelConfigMobileNetV1", "ModelConfigResNet"
+```
+this.localVideoEffectors = new LocalVideoEffectors(ModelConfigMobileNetV1)
+```
+- ModelConfigResNet
+https://virtual-background-bodypix.herokuapp.com/index.html?blur=0&model=ResNet
+
+- ModelConfigMobileNetV1
+https://virtual-background-bodypix.herokuapp.com/index.html?blur=0&model=MobileNetV1
+
+
 
 
 ## Install
