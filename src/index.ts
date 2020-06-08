@@ -1,4 +1,5 @@
 import * as BodyPix from '@tensorflow-models/body-pix';
+import { ModelConfig } from '@tensorflow-models/body-pix/dist/body_pix_model';
 
 
 /**
@@ -42,6 +43,17 @@ export const getVideoDevice = async (deviceId:string): Promise<MediaStream|null>
   return webCamPromise
 }
 
+export const ModelConfigResNet: ModelConfig = {
+    architecture: 'ResNet50',
+    outputStride: 32,
+    quantBytes: 2
+}
+export const ModelConfigMobileNetV1: ModelConfig = {
+    architecture: 'MobileNetV1',
+    outputStride: 16,
+    multiplier: 0.75,
+    quantBytes: 2
+}
 
 export class LocalVideoEffectors{
     private deviceId:string=""
@@ -53,21 +65,31 @@ export class LocalVideoEffectors{
     
     private inputVideoCanvas2 = document.createElement("canvas")
 
-    private _cameraEnabled:boolean   = true
-    private _virtualBackgroundEnabled:boolean = false
-    private _virtualBackgroundImagePath       = "/resources/vbg/pic0.jpg"
-    private bodyPix:BodyPix.BodyPix|null     = null
+    private _cameraEnabled:boolean              = true
+    private _virtualBackgroundEnabled:boolean   = false
+    private _virtualBackgroundImagePath         = "/resources/vbg/pic0.jpg"
+    private bodyPix:BodyPix.BodyPix|null        = null
+    private _maskBlurAmount                     = 2
+
     set cameraEnabled(val:boolean){this._cameraEnabled=val}
     set virtualBackgroundEnabled(val:boolean){this._virtualBackgroundEnabled=val}
     set virtualBackgroundImagePath(val:string){this._virtualBackgroundImagePath=val}
+    set maskBlurAmount(val:number){this._maskBlurAmount=val}
+
     get outputWidth():number{return this.inputVideoCanvas2.width}
     get outputHeight():number{return this.inputVideoCanvas2.height}
     get outputCanvas():HTMLCanvasElement{return this.inputVideoCanvas2}
 
-    constructor(){
-        BodyPix.load().then((bodyPix)=>{
-            this.bodyPix = bodyPix
-        })
+    constructor(config:ModelConfig|null){
+        if(config == null){
+            BodyPix.load().then((bodyPix)=>{
+                this.bodyPix = bodyPix
+            })
+        }else{
+            BodyPix.load(config).then((bodyPix)=>{
+                this.bodyPix = bodyPix
+            })
+        }
     }
 
     selectInputVideoDevice = async(deviceId:string) =>{
@@ -132,7 +154,7 @@ export class LocalVideoEffectors{
                 const backgroundColor = { r: 255, g: 255, b: 255, a: 255 };
                 const backgroundMask = BodyPix.toMask(segmentation, foregroundColor, backgroundColor);
                 const opacity = 1.0;
-                const maskBlurAmount = 2;
+                const maskBlurAmount = this._maskBlurAmount;
                 const flipHorizontal = false;
                 BodyPix.drawMask(this.inputMaskCanvas, canvas, backgroundMask, opacity, maskBlurAmount, flipHorizontal);
                 const maskedImage = this.inputMaskCanvas.getContext("2d")!.getImageData(0, 0, this.inputMaskCanvas.width, this.inputMaskCanvas.height)
