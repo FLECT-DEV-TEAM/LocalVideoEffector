@@ -50,6 +50,8 @@
     ]
   },
   "dependencies": {
-    "@tensorflow-models/body-pix": "^2.0.5"
+    "@tensorflow-models/body-pix": "^2.0.5",
+    "@tensorflow/tfjs-converter": "1.7.4",
+    "@tensorflow/tfjs-core": "1.7.4"
   }
 }
