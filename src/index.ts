@@ -93,6 +93,7 @@ export class LocalVideoEffectors{
     }
 
     selectInputVideoDevice = async(deviceId:string) =>{
+        this.inputVideoStream?.getTracks().map(s=>s.stop())
         this.deviceId=deviceId
         getVideoDevice(deviceId).then(stream => {
             if (stream !== null) {
