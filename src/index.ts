@@ -191,15 +191,15 @@ export class LocalVideoEffectors{
                     // cv_asm.imshow(canvas, claheDst);
                     // src.delete(); equalDst.delete(); claheDst.delete(); clahe.delete();
                     
-
-                    let src = cv_asm.imread(canvas);
-                    let dst = new cv_asm.Mat();
-                    cv_asm.cvtColor(src, src, cv_asm.COLOR_RGB2GRAY, 0);
-                    // You can try more different parameters
-                    cv_asm.Canny(src, dst, 100, 80, 3, false);
-                    cv_asm.imshow(canvas, dst);
-                    src.delete(); dst.delete();
-
+                    if(this._canny){
+                        let src = cv_asm.imread(canvas);
+                        let dst = new cv_asm.Mat();
+                        cv_asm.cvtColor(src, src, cv_asm.COLOR_RGB2GRAY, 0);
+                        // You can try more different parameters
+                        cv_asm.Canny(src, dst, 100, 80, 3, false);
+                        cv_asm.imshow(canvas, dst);
+                        src.delete(); dst.delete();
+                    }
                 }
                 const maskedImage = this.inputMaskCanvas.getContext("2d")!.getImageData(0, 0, this.inputMaskCanvas.width, this.inputMaskCanvas.height)
                 //// (2-3) Generate background Image
