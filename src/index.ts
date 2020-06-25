@@ -1,6 +1,13 @@
 import * as BodyPix from '@tensorflow-models/body-pix';
 import { ModelConfig } from '@tensorflow-models/body-pix/dist/body_pix_model';
 
+const cv_asm = require('../resources/opencv.js');
+let init_cv = false
+
+cv_asm.onRuntimeInitialized = function () {
+    console.log("initialized cv_asm")
+    init_cv = true
+  }
 
 /**
  * @param kind 
@@ -71,10 +78,13 @@ export class LocalVideoEffectors{
     private bodyPix:BodyPix.BodyPix|null        = null
     private _maskBlurAmount                     = 2
 
+    private _canny:boolean                      = false
+
     set cameraEnabled(val:boolean){this._cameraEnabled=val}
     set virtualBackgroundEnabled(val:boolean){this._virtualBackgroundEnabled=val}
     set virtualBackgroundImagePath(val:string){this._virtualBackgroundImagePath=val}
     set maskBlurAmount(val:number){this._maskBlurAmount=val}
+    set canny(val:boolean){this._canny=val}
 
     get outputWidth():number{return this.inputVideoCanvas2.width}
     get outputHeight():number{return this.inputVideoCanvas2.height}
@@ -158,19 +168,50 @@ export class LocalVideoEffectors{
                 const maskBlurAmount = this._maskBlurAmount;
                 const flipHorizontal = false;
                 BodyPix.drawMask(this.inputMaskCanvas, canvas, backgroundMask, opacity, maskBlurAmount, flipHorizontal);
-                const maskedImage = this.inputMaskCanvas.getContext("2d")!.getImageData(0, 0, this.inputMaskCanvas.width, this.inputMaskCanvas.height)
+                if(init_cv === true){
+                    // let src = cv_asm.imread(canvas);
+                    // let dst = new cv_asm.Mat();
+                    // cv_asm.cvtColor(src, src, cv_asm.COLOR_RGBA2GRAY, 0);
+                    // // You can try more different parameters
+                    // cv_asm.adaptiveThreshold(src, dst, 200, cv_asm.ADAPTIVE_THRESH_GAUSSIAN_C, cv_asm.THRESH_BINARY, 3, 2);
+                    // cv_asm.imshow(canvas, dst);
+                    // src.delete();
+                    // dst.delete();
 
-                //// (2-3) Generate background
-                const virtualBGImage   = this.virtualBGImage
-                virtualBGImage.src     = this._virtualBackgroundImagePath
-                const virtualBGCanvas  = this.virtualBGCanvas
-                virtualBGCanvas.width  = maskedImage.width
-                virtualBGCanvas.height = maskedImage.height
+                    // let src = cv_asm.imread(canvas);
+                    // let equalDst = new cv_asm.Mat();
+                    // let claheDst = new cv_asm.Mat();
+                    // cv_asm.cvtColor(src, src, cv_asm.COLOR_RGBA2GRAY, 0);
+                    // cv_asm.equalizeHist(src, equalDst);
+                    // let tileGridSize = new cv_asm.Size(18, 18);
+                    // // You can try more different parameters
+                    // let clahe = new cv_asm.CLAHE(40, tileGridSize);
+                    // clahe.apply(src, claheDst);
+                    // //cv_asm.imshow(canvas, equalDst);
+                    // cv_asm.imshow(canvas, claheDst);
+                    // src.delete(); equalDst.delete(); claheDst.delete(); clahe.delete();
+                    
+
+                    let src = cv_asm.imread(canvas);
+                    let dst = new cv_asm.Mat();
+                    cv_asm.cvtColor(src, src, cv_asm.COLOR_RGB2GRAY, 0);
+                    // You can try more different parameters
+                    cv_asm.Canny(src, dst, 100, 80, 3, false);
+                    cv_asm.imshow(canvas, dst);
+                    src.delete(); dst.delete();
+
+                }
+                const maskedImage = this.inputMaskCanvas.getContext("2d")!.getImageData(0, 0, this.inputMaskCanvas.width, this.inputMaskCanvas.height)
+                //// (2-3) Generate background Image
+                this.virtualBGImage.src  = this._virtualBackgroundImagePath
+                this.virtualBGCanvas.width  = maskedImage.width
+                this.virtualBGCanvas.height = maskedImage.height
                 const ctx = this.virtualBGCanvas.getContext("2d")!
                 ctx.drawImage(this.virtualBGImage, 0, 0, this.virtualBGCanvas.width, this.virtualBGCanvas.height)
                 const bgImageData = ctx.getImageData(0, 0, this.virtualBGCanvas.width, this.virtualBGCanvas.height)
                 //// (2-4) merge background and mask
                 const pixelData = new Uint8ClampedArray(maskedImage.width * maskedImage.height * 4)
+                const fgImageData = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height)
                 for (let rowIndex = 0; rowIndex < maskedImage.height; rowIndex++) {
                     for (let colIndex = 0; colIndex < maskedImage.width; colIndex++) {
                         const pix_offset = ((rowIndex * maskedImage.width) + colIndex) * 4
@@ -184,10 +225,10 @@ export class LocalVideoEffectors{
                             pixelData[pix_offset + 2] = bgImageData.data[pix_offset + 2]
                             pixelData[pix_offset + 3] = bgImageData.data[pix_offset + 3]
                         } else {
-                            pixelData[pix_offset] = maskedImage.data[pix_offset]
-                            pixelData[pix_offset + 1] = maskedImage.data[pix_offset + 1]
-                            pixelData[pix_offset + 2] = maskedImage.data[pix_offset + 2]
-                            pixelData[pix_offset + 3] = maskedImage.data[pix_offset + 3]
+                            pixelData[pix_offset]     = fgImageData.data[pix_offset]
+                            pixelData[pix_offset + 1] = fgImageData.data[pix_offset + 1]
+                            pixelData[pix_offset + 2] = fgImageData.data[pix_offset + 2]
+                            pixelData[pix_offset + 3] = fgImageData.data[pix_offset + 3]
                         }
                     }
                 }
