@@ -118,6 +118,21 @@ export class LocalVideoEffectors{
             }
         }).catch((e) => {
             console.log("DEVICE:error:", e)
+            throw new Error("DEVICE:error: "+e)
+        });
+    }
+
+    setMediaStream = async(stream:MediaStream) =>{
+        this.inputVideoStream?.getTracks().map(s=>s.stop())
+
+        this.inputVideoElement!.srcObject = stream
+        this.inputVideoElement!.loop = true
+        this.inputVideoElement!.play()
+        this.inputVideoStream = stream
+        return new Promise((resolve, reject) => {
+            this.inputVideoElement!.onloadedmetadata = () => {
+                resolve();
+            };
         });
     }
 
