@@ -153,14 +153,19 @@ export class LocalVideoEffectors{
             ctx.fillStyle = "grey"
             ctx.fillRect(0, 0, this.inputVideoCanvas2.width, this.inputVideoCanvas2.height)
         } else if (this.inputVideoStream !== null && this._virtualBackgroundEnabled === false) {
-            const ctx = this.inputVideoCanvas2.getContext("2d")!
-            const inputVideoCanvas2 = this.inputVideoCanvas2
-            const outputWidth = this.inputVideoStream?.getTracks()[0].getSettings().width!
-            const outputHeight = this.inputVideoStream?.getTracks()[0].getSettings().height!
-            // inputVideoCanvas2.width  = LocalVideoConfigs[this.outputResolutionKey].width
-            inputVideoCanvas2.width  = width
-            inputVideoCanvas2.height = (inputVideoCanvas2.width/outputWidth) * outputHeight
-            ctx.drawImage(this.inputVideoElement, 0, 0, inputVideoCanvas2.width, inputVideoCanvas2.height)
+            try{
+                const ctx = this.inputVideoCanvas2.getContext("2d")!
+                const inputVideoCanvas2 = this.inputVideoCanvas2
+                const outputWidth = this.inputVideoStream?.getVideoTracks()[0].getSettings().width!
+                const outputHeight = this.inputVideoStream?.getVideoTracks()[0].getSettings().height!
+
+                inputVideoCanvas2.width  = width
+                inputVideoCanvas2.height = (inputVideoCanvas2.width/outputWidth) * outputHeight
+                ctx.drawImage(this.inputVideoElement, 0, 0, inputVideoCanvas2.width, inputVideoCanvas2.height)
+    
+            }catch(e){
+                console.log("doEffect[nomask]",e)
+            }
         } else if (this.inputVideoStream !== null && this._virtualBackgroundEnabled === true && this.bodyPix !== null){
             //// (1) Generate input image for segmentation.
             const outputWidth       = this.inputVideoStream?.getTracks()[0].getSettings().width!
