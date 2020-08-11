@@ -62,6 +62,14 @@ export const ModelConfigMobileNetV1: ModelConfig = {
     quantBytes: 2
 }
 
+export const ModelConfigMobileNetV1_05: ModelConfig = {
+    architecture: 'MobileNetV1',
+    outputStride: 16,
+    multiplier: 0.5,
+    quantBytes: 2
+}
+
+
 export class LocalVideoEffectors{
     private deviceId:string=""
     private inputVideoStream:MediaStream | null = null
