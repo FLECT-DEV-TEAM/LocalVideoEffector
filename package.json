@@ -9,6 +9,10 @@
     "clean": "rimraf dist/*",
     "build": "npm-run-all clean webpack"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FLECT-DEV-TEAM/LocalVideoEffector"
+  },  
   "keywords": [],
   "author": "wataru.okada@flect.co.jp",
   "license": "Apache-2.0",
