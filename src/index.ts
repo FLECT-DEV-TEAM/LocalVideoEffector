@@ -61,18 +61,16 @@ export const ModelConfigMobileNetV1: ModelConfig = {
     multiplier: 0.75,
     quantBytes: 2
 }
-
 export const ModelConfigMobileNetV1_05: ModelConfig = {
     architecture: 'MobileNetV1',
     outputStride: 16,
     multiplier: 0.5,
     quantBytes: 2
 }
-
+    
 
 export class LocalVideoEffectors{
     private deviceId:string=""
-    private inputVideoStream:MediaStream | null = null
     private inputVideoElement = document.createElement("video")
     private inputMaskCanvas   = document.createElement("canvas")
     private virtualBGImage    = document.createElement("img")
@@ -80,6 +78,7 @@ export class LocalVideoEffectors{
     
     private inputVideoCanvas2 = document.createElement("canvas")
 
+    private _inputVideoStream:MediaStream | null = null
     private _cameraEnabled:boolean              = true
     private _virtualBackgroundEnabled:boolean   = false
     private _virtualBackgroundImagePath         = "/resources/vbg/pic0.jpg"
@@ -97,6 +96,7 @@ export class LocalVideoEffectors{
     get outputWidth():number{return this.inputVideoCanvas2.width}
     get outputHeight():number{return this.inputVideoCanvas2.height}
     get outputCanvas():HTMLCanvasElement{return this.inputVideoCanvas2}
+    //get inputVideoStream():MediaStream|null{return this._inputVideoStream}
 
     constructor(config:ModelConfig|null){
         if(config == null){
@@ -111,13 +111,13 @@ export class LocalVideoEffectors{
     }
 
     selectInputVideoDevice = async(deviceId:string) =>{
-        this.inputVideoStream?.getTracks().map(s=>s.stop())
+        this._inputVideoStream?.getTracks().map(s=>s.stop())
         this.deviceId=deviceId
         getVideoDevice(deviceId).then(stream => {
             if (stream !== null) {
                 this.inputVideoElement!.srcObject = stream
                 this.inputVideoElement!.play()
-                this.inputVideoStream = stream
+                this._inputVideoStream = stream
                 return new Promise((resolve, reject) => {
                     this.inputVideoElement!.onloadedmetadata = () => {
                         resolve();
@@ -130,13 +130,21 @@ export class LocalVideoEffectors{
         });
     }
 
+    startVideo = ()=>{
+        this.inputVideoElement.play()
+    }
+
+    setVideoElement = (videoElement:HTMLVideoElement)=>{
+        this.inputVideoElement = videoElement
+    }
+
     setMediaStream = async(stream:MediaStream) =>{
-        this.inputVideoStream?.getTracks().map(s=>s.stop())
+        this._inputVideoStream?.getTracks().map(s=>s.stop())
 
         this.inputVideoElement!.srcObject = stream
         this.inputVideoElement!.loop = true
         this.inputVideoElement!.play()
-        this.inputVideoStream = stream
+        this._inputVideoStream = stream
         return new Promise((resolve, reject) => {
             this.inputVideoElement!.onloadedmetadata = () => {
                 resolve();
@@ -145,7 +153,7 @@ export class LocalVideoEffectors{
     }
 
     stopInputMediaStream = () =>{
-        this.inputVideoStream?.getVideoTracks()[0].stop()
+        this._inputVideoStream?.getVideoTracks()[0].stop()
     } 
 
     getMediaStream = ():MediaStream =>{
@@ -160,12 +168,12 @@ export class LocalVideoEffectors{
             this.inputVideoCanvas2.height = 4
             ctx.fillStyle = "grey"
             ctx.fillRect(0, 0, this.inputVideoCanvas2.width, this.inputVideoCanvas2.height)
-        } else if (this.inputVideoStream !== null && this._virtualBackgroundEnabled === false) {
+        } else if (this._inputVideoStream !== null && this._virtualBackgroundEnabled === false) {
             try{
                 const ctx = this.inputVideoCanvas2.getContext("2d")!
                 const inputVideoCanvas2 = this.inputVideoCanvas2
-                const outputWidth = this.inputVideoStream?.getVideoTracks()[0].getSettings().width!
-                const outputHeight = this.inputVideoStream?.getVideoTracks()[0].getSettings().height!
+                const outputWidth = this._inputVideoStream?.getVideoTracks()[0].getSettings().width!
+                const outputHeight = this._inputVideoStream?.getVideoTracks()[0].getSettings().height!
 
                 inputVideoCanvas2.width  = width
                 inputVideoCanvas2.height = (inputVideoCanvas2.width/outputWidth) * outputHeight
@@ -174,10 +182,10 @@ export class LocalVideoEffectors{
             }catch(e){
                 console.log("doEffect[nomask]",e)
             }
-        } else if (this.inputVideoStream !== null && this._virtualBackgroundEnabled === true && this.bodyPix !== null){
+        } else if (this._inputVideoStream !== null && this._virtualBackgroundEnabled === true && this.bodyPix !== null){
             //// (1) Generate input image for segmentation.
-            const outputWidth       = this.inputVideoStream?.getTracks()[0].getSettings().width!
-            const outputHeight      = this.inputVideoStream?.getTracks()[0].getSettings().height!
+            const outputWidth       = this._inputVideoStream?.getTracks()[0].getSettings().width!
+            const outputHeight      = this._inputVideoStream?.getTracks()[0].getSettings().height!
             const canvas            = document.createElement("canvas")
             canvas.width            = width
 //            canvas.width            = LocalVideoConfigs[this.outputResolutionKey].width
@@ -271,7 +279,7 @@ export class LocalVideoEffectors{
             })
         }else{
             // console.log("no video effecting1.")
-            // console.log("no video effecting2." , this.inputVideoStream)
+            // console.log("no video effecting2." , this._inputVideoStream)
             // console.log("no video effecting3." , this.virtualBackgroundEnabled)
             // console.log("no video effecting4." , this.bodyPix)
         }
