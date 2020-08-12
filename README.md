@@ -14,6 +14,9 @@ This package enable your webpage to apply effects to images captured by camera d
 ## Demo
 https://virtual-background-bodypix.herokuapp.com/index.html
 
+### Demo source code
+
+
 ## Requirement
 This library is tested only with react.
 
@@ -125,8 +128,42 @@ https://virtual-background-bodypix.herokuapp.com/index.html?blur=0&model=ResNet
 - ModelConfigMobileNetV1
 https://virtual-background-bodypix.herokuapp.com/index.html?blur=0&model=MobileNetV1
 
+### iPhone safari
+If you use the safari on iPhone, your video element must be run by clicking start button. This means video element must be controllable from your code directory. This package provide the method to set the HTMLVideoElement you defined.
 
+Usage example:
+In this example, render method of ReactComponent return HTMLVideoElement and Button which sets the HTMLElement to the this package(LocalVideoEeffectors).
 
+```
+      return (
+        <div style={{ width: "480px", margin: "auto" }}>
+          <video ref={this.localVideoRef} style={{ display: "block", width: "480px", margin: "auto" }} playsInline />
+          <canvas ref={this.localCanvasRef}  style={{ display: "block", width: "480px", margin: "auto" }} />
+          <input type="button" value="start" onClick={(e)=>{
+            navigator.mediaDevices.getUserMedia({              
+              audio: false,
+              video: { 
+                // deviceId: deviceId,
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+              }
+            }).then(stream => {
+              if (stream !== null) {
+                this.localVideoRef.current!.srcObject = stream
+                this.localVideoRef.current!.play()
+                return new Promise((resolve, reject) => {
+                  this.localVideoRef.current!.onloadedmetadata = () => {
+                    resolve();
+                  };
+                });
+              }
+            })
+            this.localVideoEffectors!.setVideoElement(this.localVideoRef.current!)
+          }}
+          />
+        </div>
+      )
+```
 
 ## Install
 
