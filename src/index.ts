@@ -248,17 +248,8 @@ export class LocalVideoEffectors{
             //// (2) Segmentation & Mask
             //// (2-1) Segmentation.
             this.bodyPix.segmentPerson(canvas).then((segmentation) => {
-                //// (2-2) Generate mask
-                const foregroundColor = { r: 0, g: 0, b: 0, a: 0 };
-                const backgroundColor = { r: 255, g: 255, b: 255, a: 0 };
-                const backgroundMask = BodyPix.toMask(segmentation, foregroundColor, backgroundColor);
-                const opacity = 1.0;
-                const maskBlurAmount = this._maskBlurAmount;
-                const flipHorizontal = false;
-                BodyPix.drawMask(this.inputMaskCanvas, canvas, backgroundMask, opacity, maskBlurAmount, flipHorizontal);
-                // if(this._monitorCanvas!==null){
-                //     BodyPix.drawMask(this._monitorCanvas, canvas, backgroundMask, opacity, maskBlurAmount, flipHorizontal);
-                // }
+                //console.log(segmentation)
+
                 if(init_cv === true){
                     // let src = cv_asm.imread(canvas);
                     // let dst = new cv_asm.Mat();
@@ -292,7 +283,6 @@ export class LocalVideoEffectors{
                         src.delete(); dst.delete();
                     }
                 }
-                const maskedImage = this.inputMaskCanvas.getContext("2d")!.getImageData(0, 0, this.inputMaskCanvas.width, this.inputMaskCanvas.height)
                 
                 //// (2-3) Generate background Image
                 // this.virtualBGCanvas.width  = maskedImage.width
@@ -317,26 +307,19 @@ export class LocalVideoEffectors{
                 }
                 const bgImageData = ctx.getImageData(0, 0, this.virtualBGCanvas.width, this.virtualBGCanvas.height)
                 //// (2-4) merge background and mask
-                const pixelData = new Uint8ClampedArray(maskedImage.width * maskedImage.height * 4)
+                const pixelData = new Uint8ClampedArray(segmentation.width * segmentation.height * 4)
                 const fgImageData = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height)
-                for (let rowIndex = 0; rowIndex < maskedImage.height; rowIndex++) {
-                    for (let colIndex = 0; colIndex < maskedImage.width; colIndex++) {
-                        const pix_offset = ((rowIndex * maskedImage.width) + colIndex) * 4
-                        if (maskedImage.data[pix_offset] === 255 &&
-                            maskedImage.data[pix_offset + 1] === 255 &&
-                            maskedImage.data[pix_offset + 2] === 255 &&
-                            maskedImage.data[pix_offset + 3] === 0
-                        ) {
-                            // pixelData[pix_offset] = bgImageData.data[pix_offset]
-                            // pixelData[pix_offset + 1] = bgImageData.data[pix_offset + 1]
-                            // pixelData[pix_offset + 2] = bgImageData.data[pix_offset + 2]
-                            // pixelData[pix_offset + 3] = bgImageData.data[pix_offset + 3]
+
+                for (let rowIndex = 0; rowIndex < segmentation.height; rowIndex++){
+                    for(let colIndex = 0; colIndex < segmentation.width; colIndex++){
+                        const seg_offset = ((rowIndex * segmentation.width) + colIndex)
+                        const pix_offset = ((rowIndex * segmentation.width) + colIndex) * 4
+                        if(segmentation.data[seg_offset] === 0){
                             pixelData[pix_offset]     = 0
                             pixelData[pix_offset + 1] = 0
                             pixelData[pix_offset + 2] = 0
                             pixelData[pix_offset + 3] = 0
-
-                        } else {
+                        }else{
                             pixelData[pix_offset]     = fgImageData.data[pix_offset]
                             pixelData[pix_offset + 1] = fgImageData.data[pix_offset + 1]
                             pixelData[pix_offset + 2] = fgImageData.data[pix_offset + 2]
@@ -344,7 +327,8 @@ export class LocalVideoEffectors{
                         }
                     }
                 }
-                const imageData = new ImageData(pixelData, maskedImage.width, maskedImage.height);
+
+                const imageData = new ImageData(pixelData, segmentation.width, segmentation.height);
 
 
                 //// (2-5) resize foreground
