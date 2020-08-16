@@ -68,6 +68,11 @@ export const ModelConfigMobileNetV1_05: ModelConfig = {
     quantBytes: 2
 }
     
+export enum BackgroundType{
+    NONE,
+    Image,
+    Stream,
+}
 
 export class LocalVideoEffectors{
     private deviceId:string=""
@@ -75,23 +80,59 @@ export class LocalVideoEffectors{
     private inputMaskCanvas   = document.createElement("canvas")
     private virtualBGImage    = document.createElement("img")
     private virtualBGCanvas   = document.createElement("canvas")
+    private virtualBGVideo    = document.createElement("video")
     
     private inputVideoCanvas2 = document.createElement("canvas")
 
-    private _inputVideoStream:MediaStream | null = null
-    private _cameraEnabled:boolean              = true
-    private _virtualBackgroundEnabled:boolean   = false
-    private _virtualBackgroundImagePath         = "/resources/vbg/pic0.jpg"
-    private bodyPix:BodyPix.BodyPix|null        = null
-    private _maskBlurAmount                     = 2
+    private _monitorCanvas:HTMLCanvasElement|null = null
 
-    private _canny:boolean                      = false
+    private _inputVideoStream:MediaStream | null           = null
+    private _cameraEnabled:boolean                         = true
+
+    private _foregroundPositionStartX                      = 0.0
+    private _foregroundPositionStartY                      = 0.0
+    private _foregroundPositionWidth                       = 1.0
+    private _foregroundPositionHeight                      = 1.0
+
+    private _backgroundType                                = BackgroundType.Image
+    private _virtualBackgroundEnabled:boolean              = false
+    private _virtualBackgroundImagePath                    = "/resources/vbg/pic0.jpg"
+    private _virtualBackgroundMediaStream:MediaStream|null = null
+    private bodyPix:BodyPix.BodyPix|null                   = null
+    private _maskBlurAmount                                = 2
+
+    private _canny:boolean                                 = false
+
+    set monitorCanvas(canvas:HTMLCanvasElement){this._monitorCanvas=canvas}
 
     set cameraEnabled(val:boolean){this._cameraEnabled=val}
     set virtualBackgroundEnabled(val:boolean){this._virtualBackgroundEnabled=val}
-    set virtualBackgroundImagePath(val:string){this._virtualBackgroundImagePath=val}
+
+    set virtualBackgroundImagePath(val:string){
+        this.virtualBGImage              = document.createElement("img")
+        this._virtualBackgroundImagePath = val
+        this.virtualBGImage.src          = this._virtualBackgroundImagePath
+        this._backgroundType             = BackgroundType.Image
+    }
+
+    set virtualBackgroundImageElement(img:HTMLImageElement){
+        this.virtualBGImage = img
+        this._backgroundType = BackgroundType.Image
+    }
+
+    set virtualBackgroundStream(bgStream:MediaStream){
+        this._virtualBackgroundMediaStream = bgStream
+        this.virtualBGVideo.width          = this._virtualBackgroundMediaStream.getVideoTracks()[0].getSettings().width!
+        this.virtualBGVideo.height         = this._virtualBackgroundMediaStream.getVideoTracks()[0].getSettings().height!
+        this.virtualBGVideo.srcObject      = this._virtualBackgroundMediaStream
+        this.virtualBGVideo.play()
+        this.virtualBGVideo.loop           = true
+        this._backgroundType               = BackgroundType.Stream
+    }
+
     set maskBlurAmount(val:number){this._maskBlurAmount=val}
     set canny(val:boolean){this._canny=val}
+    get canny():boolean{return this._canny}
 
     get outputWidth():number{return this.inputVideoCanvas2.width}
     get outputHeight():number{return this.inputVideoCanvas2.height}
@@ -110,14 +151,23 @@ export class LocalVideoEffectors{
         }
     }
 
+    setForegroundPosition = (startX:number, startY:number, width:number, height:number) => {
+        this._foregroundPositionStartX = startX
+        this._foregroundPositionStartY = startY
+        this._foregroundPositionWidth  = width
+        this._foregroundPositionHeight = height
+    }
+
     selectInputVideoDevice = async(deviceId:string) =>{
         this._inputVideoStream?.getTracks().map(s=>s.stop())
         this.deviceId=deviceId
         getVideoDevice(deviceId).then(stream => {
             if (stream !== null) {
+                this.inputVideoElement!.width = stream.getVideoTracks()[0].getSettings().width!
+                this.inputVideoElement!.height = stream.getVideoTracks()[0].getSettings().height!
                 this.inputVideoElement!.srcObject = stream
                 this.inputVideoElement!.play()
-                this._inputVideoStream = stream
+                this._inputVideoStream = stream 
                 return new Promise((resolve, reject) => {
                     this.inputVideoElement!.onloadedmetadata = () => {
                         resolve();
@@ -188,8 +238,10 @@ export class LocalVideoEffectors{
             const outputHeight      = this._inputVideoStream?.getTracks()[0].getSettings().height!
             const canvas            = document.createElement("canvas")
             canvas.width            = width
+
 //            canvas.width            = LocalVideoConfigs[this.outputResolutionKey].width
             canvas.height           = (canvas.width/outputWidth) * outputHeight
+
             const ctx = canvas.getContext("2d")!
             ctx.drawImage(this.inputVideoElement, 0, 0, canvas.width, canvas.height)
 
@@ -204,6 +256,9 @@ export class LocalVideoEffectors{
                 const maskBlurAmount = this._maskBlurAmount;
                 const flipHorizontal = false;
                 BodyPix.drawMask(this.inputMaskCanvas, canvas, backgroundMask, opacity, maskBlurAmount, flipHorizontal);
+                // if(this._monitorCanvas!==null){
+                //     BodyPix.drawMask(this._monitorCanvas, canvas, backgroundMask, opacity, maskBlurAmount, flipHorizontal);
+                // }
                 if(init_cv === true){
                     // let src = cv_asm.imread(canvas);
                     // let dst = new cv_asm.Mat();
@@ -238,12 +293,28 @@ export class LocalVideoEffectors{
                     }
                 }
                 const maskedImage = this.inputMaskCanvas.getContext("2d")!.getImageData(0, 0, this.inputMaskCanvas.width, this.inputMaskCanvas.height)
+                
                 //// (2-3) Generate background Image
-                this.virtualBGImage.src  = this._virtualBackgroundImagePath
-                this.virtualBGCanvas.width  = maskedImage.width
-                this.virtualBGCanvas.height = maskedImage.height
+                // this.virtualBGCanvas.width  = maskedImage.width
+                // this.virtualBGCanvas.height = maskedImage.height
                 const ctx = this.virtualBGCanvas.getContext("2d")!
-                ctx.drawImage(this.virtualBGImage, 0, 0, this.virtualBGCanvas.width, this.virtualBGCanvas.height)
+                if(this._backgroundType === BackgroundType.Image){
+                    this.virtualBGCanvas.width  = this.virtualBGImage.width
+                    this.virtualBGCanvas.height = this.virtualBGImage.height
+                    ctx.drawImage(this.virtualBGImage, 0, 0, this.virtualBGCanvas.width, this.virtualBGCanvas.height)
+                }else if(this._backgroundType === BackgroundType.Stream){
+                    try{
+                        this.virtualBGCanvas.width  = this._virtualBackgroundMediaStream?.getVideoTracks()[0].getSettings().width!
+                        this.virtualBGCanvas.height = this._virtualBackgroundMediaStream?.getVideoTracks()[0].getSettings().height!
+                    }catch(exception){
+
+                    }
+                    ctx.drawImage(this.virtualBGVideo, 0, 0, this.virtualBGCanvas.width, this.virtualBGCanvas.height)
+                }else{
+                    this.virtualBGCanvas.width  = this.virtualBGImage.width
+                    this.virtualBGCanvas.height = this.virtualBGImage.height
+                    ctx.drawImage(this.virtualBGImage, 0, 0, this.virtualBGCanvas.width, this.virtualBGCanvas.height)
+                }
                 const bgImageData = ctx.getImageData(0, 0, this.virtualBGCanvas.width, this.virtualBGCanvas.height)
                 //// (2-4) merge background and mask
                 const pixelData = new Uint8ClampedArray(maskedImage.width * maskedImage.height * 4)
@@ -256,10 +327,15 @@ export class LocalVideoEffectors{
                             maskedImage.data[pix_offset + 2] === 255 &&
                             maskedImage.data[pix_offset + 3] === 255
                         ) {
-                            pixelData[pix_offset] = bgImageData.data[pix_offset]
-                            pixelData[pix_offset + 1] = bgImageData.data[pix_offset + 1]
-                            pixelData[pix_offset + 2] = bgImageData.data[pix_offset + 2]
-                            pixelData[pix_offset + 3] = bgImageData.data[pix_offset + 3]
+                            // pixelData[pix_offset] = bgImageData.data[pix_offset]
+                            // pixelData[pix_offset + 1] = bgImageData.data[pix_offset + 1]
+                            // pixelData[pix_offset + 2] = bgImageData.data[pix_offset + 2]
+                            // pixelData[pix_offset + 3] = bgImageData.data[pix_offset + 3]
+                            pixelData[pix_offset]     = 0
+                            pixelData[pix_offset + 1] = 0
+                            pixelData[pix_offset + 2] = 0
+                            pixelData[pix_offset + 3] = 0
+
                         } else {
                             pixelData[pix_offset]     = fgImageData.data[pix_offset]
                             pixelData[pix_offset + 1] = fgImageData.data[pix_offset + 1]
@@ -270,12 +346,28 @@ export class LocalVideoEffectors{
                 }
                 const imageData = new ImageData(pixelData, maskedImage.width, maskedImage.height);
 
-                //// (2-5) output
-                const inputVideoCanvas2   = this.inputVideoCanvas2
-                inputVideoCanvas2.width   = imageData.width
-                inputVideoCanvas2.height  = imageData.height
-                inputVideoCanvas2.getContext("2d")!.putImageData(imageData, 0, 0)
 
+                //// (2-5) resize foreground
+                const resizeCanvas  = document.createElement("canvas")
+                resizeCanvas.width  = imageData.width
+                resizeCanvas.height = imageData.height
+                resizeCanvas.getContext("2d")!.putImageData(imageData, 0, 0)
+
+                //// (2-6) output
+                const inputVideoCanvas2   = this.inputVideoCanvas2
+                inputVideoCanvas2.width   = this.virtualBGCanvas.width
+                inputVideoCanvas2.height  = this.virtualBGCanvas.height
+                // inputVideoCanvas2.getContext("2d")!.putImageData(imageData, 0, 0)
+                // inputVideoCanvas2.getContext("2d")!.putImageData(bgImageData, 0, 0)
+                inputVideoCanvas2.getContext("2d")!.drawImage(this.virtualBGCanvas, 0, 0, inputVideoCanvas2.width, inputVideoCanvas2.height)
+                
+                inputVideoCanvas2.getContext("2d")!.drawImage(
+                    resizeCanvas, 
+                    this._foregroundPositionStartX * inputVideoCanvas2.width, 
+                    this._foregroundPositionStartY * inputVideoCanvas2.height, 
+                    this._foregroundPositionWidth  * inputVideoCanvas2.width, 
+                    this._foregroundPositionHeight * inputVideoCanvas2.height
+                )
             })
         }else{
             // console.log("no video effecting1.")
