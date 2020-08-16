@@ -250,7 +250,7 @@ export class LocalVideoEffectors{
             this.bodyPix.segmentPerson(canvas).then((segmentation) => {
                 //// (2-2) Generate mask
                 const foregroundColor = { r: 0, g: 0, b: 0, a: 0 };
-                const backgroundColor = { r: 255, g: 255, b: 255, a: 255 };
+                const backgroundColor = { r: 255, g: 255, b: 255, a: 0 };
                 const backgroundMask = BodyPix.toMask(segmentation, foregroundColor, backgroundColor);
                 const opacity = 1.0;
                 const maskBlurAmount = this._maskBlurAmount;
@@ -325,7 +325,7 @@ export class LocalVideoEffectors{
                         if (maskedImage.data[pix_offset] === 255 &&
                             maskedImage.data[pix_offset + 1] === 255 &&
                             maskedImage.data[pix_offset + 2] === 255 &&
-                            maskedImage.data[pix_offset + 3] === 255
+                            maskedImage.data[pix_offset + 3] === 0
                         ) {
                             // pixelData[pix_offset] = bgImageData.data[pix_offset]
                             // pixelData[pix_offset + 1] = bgImageData.data[pix_offset + 1]
