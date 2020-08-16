@@ -9,6 +9,8 @@ This package enable your webpage to apply effects to images captured by camera d
 ### Features
 
 - Virtual Background
+- Share screen as virtual background
+- Share movie as virtual background
 - (not yet)
 
 ## Demo
@@ -127,6 +129,53 @@ https://virtual-background-bodypix.herokuapp.com/index.html?blur=0&model=ResNet
 
 - ModelConfigMobileNetV1
 https://virtual-background-bodypix.herokuapp.com/index.html?blur=0&model=MobileNetV1
+
+#### Sharing screen or movie as virtual background
+This package have the function to use the mediastream as virtual background. You can set the Mediastrem as below example. 
+
+This example shows the how to change the virtual background. These function is called by your UI button such as onClick or so.
+
+```
+
+  setBGImage = () => {
+    this.localVideoEffectors!.virtualBackgroundImageElement = this.virtualBGImage
+    this.setState({foregroundSizeChange: false})
+    this.shareVideoElementRef.current!.pause()
+  }
+
+  // For SharedDisplay
+  sharedDisplaySelected = () => {
+    const streamConstraints = {
+        // frameRate: {
+        //     max: 15,
+        // },
+    }
+    // @ts-ignore https://github.com/microsoft/TypeScript/issues/31821
+    navigator.mediaDevices.getDisplayMedia().then(media => {
+      this.localVideoEffectors!.virtualBackgroundStream = media
+      this.setState({foregroundSizeChange: true})
+      this.shareVideoElementRef.current!.pause()
+    })
+  }
+
+  // For SharedVideo
+  sharedVideoSelected = (e: any) => {
+    const path = URL.createObjectURL(e.target.files[0]);
+    console.log(path)
+    this.shareVideoElementRef.current!.src = path
+    this.shareVideoElementRef.current!.play()
+
+    setTimeout(
+      async () => {
+          // @ts-ignore
+          const mediaStream: MediaStream = await this.shareVideoElementRef.current!.captureStream()
+          this.localVideoEffectors!.virtualBackgroundStream = mediaStream
+          this.setState({foregroundSizeChange: true})
+        }
+      , 3000); // I don't know but we need some seconds to restart video share....
+  }
+
+```
 
 ### iPhone safari
 If you use the safari on iPhone, your video element must be run by clicking start button. This means video element must be controllable from your code directory. This package provide the method to set the HTMLVideoElement you defined.
