@@ -6,6 +6,10 @@ LocalVideoEffector is the library to apply effects to the video image in real ti
 ## Description
 This package enable your webpage to apply effects to images captured by camera device in real time. For example virtual background.
 
+<p align="center">
+<img src="./doc/demo_basic.gif" width="480" />
+</p>
+
 ### Features
 
 - Virtual Background
@@ -175,6 +179,24 @@ This example shows the how to change the virtual background. These function is c
       , 3000); // I don't know but we need some seconds to restart video share....
   }
 
+```
+
+#### Virtual Foreground
+You can use mask to hide user face by line drawing or ascii art.
+
+<p align="center">
+<img src="./doc/demo_vfg.gif" width="480" />
+</p>
+
+
+```
+this.localVideoEffectors!.foregroundType = ForegroundType.Canny
+```
+
+or
+
+```
+this.localVideoEffectors!.foregroundType = ForegroundType.Ascii
 ```
 
 ### iPhone safari

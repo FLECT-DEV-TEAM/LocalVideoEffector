@@ -73,6 +73,11 @@ export enum BackgroundType{
     Image,
     Stream,
 }
+export enum ForegroundType{
+    NONE,
+    Canny,
+    Ascii,
+}
 
 export class LocalVideoEffectors{
     private deviceId:string=""
@@ -101,8 +106,12 @@ export class LocalVideoEffectors{
     private bodyPix:BodyPix.BodyPix|null                   = null
     private _maskBlurAmount                                = 2
 
-    private _canny:boolean                                 = false
-
+    private _foregroundType                                =  ForegroundType.NONE
+    private asciiStr = " .,:;i1tfLCG08@"
+    private asciiCharacters = (this.asciiStr).split("");
+    private _asciiFontSize                                  = 6
+    // http://www.dfstudios.co.uk/articles/image-processing-algorithms-part-5/
+    private contrastFactor = (259 * (128 + 255)) / (255 * (259 - 128));
     set monitorCanvas(canvas:HTMLCanvasElement){this._monitorCanvas=canvas}
 
     set cameraEnabled(val:boolean){this._cameraEnabled=val}
@@ -131,8 +140,10 @@ export class LocalVideoEffectors{
     }
 
     set maskBlurAmount(val:number){this._maskBlurAmount=val}
-    set canny(val:boolean){this._canny=val}
-    get canny():boolean{return this._canny}
+    set canny(val:boolean){this._foregroundType=ForegroundType.Canny} // depredated
+    get canny():boolean{return this._foregroundType === ForegroundType.Canny} // depredated
+    set foregroundType(type:ForegroundType){this._foregroundType=type}
+    set asciiFontSize(size:number){this._asciiFontSize=size}
 
     get outputWidth():number{return this.inputVideoCanvas2.width}
     get outputHeight():number{return this.inputVideoCanvas2.height}
@@ -273,7 +284,7 @@ export class LocalVideoEffectors{
                     // cv_asm.imshow(canvas, claheDst);
                     // src.delete(); equalDst.delete(); claheDst.delete(); clahe.delete();
                     
-                    if(this._canny){
+                    if(this._foregroundType===ForegroundType.Canny){
                         let src = cv_asm.imread(canvas);
                         let dst = new cv_asm.Mat();
                         cv_asm.cvtColor(src, src, cv_asm.COLOR_RGB2GRAY, 0);
@@ -281,6 +292,55 @@ export class LocalVideoEffectors{
                         cv_asm.Canny(src, dst, 100, 80, 3, false);
                         cv_asm.imshow(canvas, dst);
                         src.delete(); dst.delete();
+                    }else if(this._foregroundType===ForegroundType.Ascii){
+
+                        const asciiCanvas = document.createElement("canvas")
+                        const asciiCtx = asciiCanvas.getContext("2d")!
+                        const fontSize = this._asciiFontSize
+                        asciiCtx.font = fontSize + "px monospace"
+                        asciiCtx.textBaseline = "top";
+                        const m = asciiCtx.measureText(this.asciiStr)
+                        const charWidth = Math.floor(m.width / this.asciiCharacters.length)
+                        const tmpWidth  = Math.ceil(canvas.width  / charWidth)
+                        const tmpHeight = Math.ceil(canvas.height / fontSize)
+                        asciiCanvas.width  = tmpWidth
+                        asciiCanvas.height = tmpHeight
+                        asciiCtx.drawImage(canvas, 0, 0, asciiCanvas.width, asciiCanvas.height)
+                        const imageData = asciiCtx.getImageData(0, 0, asciiCanvas.width, asciiCanvas.height)
+//                        const imageData = canvas.getContext("2d")!.getImageData(0, 0, asciiCanvas.width, asciiCanvas.height)
+                        let lines = []
+                        for (let y = 0; y < asciiCanvas.height; y ++) {
+                            let line = ""
+                            for (let x = 0; x < asciiCanvas.width; x++) {
+                                const offset = (y * asciiCanvas.width + x) * 4;
+
+                                const r = Math.max(0, Math.min((Math.floor((imageData.data[offset + 0] - 128 ) * this.contrastFactor) + 128), 255));
+                                const g = Math.max(0, Math.min((Math.floor((imageData.data[offset + 1] - 128 ) * this.contrastFactor) + 128), 255));
+                                const b = Math.max(0, Math.min((Math.floor((imageData.data[offset + 2] - 128 ) * this.contrastFactor) + 128), 255));
+//                                console.log(x, y, offset, imageData.data[offset + 0], imageData.data[offset + 1], imageData.data[offset + 2])
+//                                console.log(r, g, b)
+                                
+                                var brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                                // console.log(brightness)
+                                var character = this.asciiCharacters[(this.asciiCharacters.length - 1) - Math.round(brightness * (this.asciiCharacters.length - 1))];
+                                line += character
+                            }
+                            lines.push(line)
+                        }
+                        
+                        asciiCtx.font = fontSize + "px monospace"
+                        asciiCanvas.width  = asciiCtx.measureText(lines[0]).width
+                        asciiCanvas.height = fontSize * asciiCanvas.height
+                        asciiCtx.fillStyle = "rgb(255, 255, 255)";
+                        asciiCtx.fillRect(0, 0, asciiCanvas.width, asciiCanvas.height)
+                        asciiCtx.fillStyle = "rgb(0, 0, 0)";
+                        asciiCtx.font = fontSize + "px monospace"
+                        for(let n=0; n<lines.length; n++){
+                            asciiCtx.fillText(lines[n], 0, n * fontSize)
+                        }
+
+                        const ctx =canvas.getContext("2d")!
+                        ctx.drawImage(asciiCanvas, 0, 0, canvas.width, canvas.height)
                     }
                 }
                 
@@ -314,7 +374,8 @@ export class LocalVideoEffectors{
                     for(let colIndex = 0; colIndex < segmentation.width; colIndex++){
                         const seg_offset = ((rowIndex * segmentation.width) + colIndex)
                         const pix_offset = ((rowIndex * segmentation.width) + colIndex) * 4
-                        if(segmentation.data[seg_offset] === 0){
+                        // if(segmentation.data[seg_offset] === 110 ){
+                        if(segmentation.data[seg_offset] === 0 ){
                             pixelData[pix_offset]     = 0
                             pixelData[pix_offset + 1] = 0
                             pixelData[pix_offset + 2] = 0
