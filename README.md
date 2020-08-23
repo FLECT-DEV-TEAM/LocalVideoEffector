@@ -21,7 +21,7 @@ This package enable your webpage to apply effects to images captured by camera d
 https://flect-lab-web.s3-us-west-2.amazonaws.com/001_virtual_background/index.html
 
 ### Demo source code
-
+https://github.com/dannadori/virtual-background-demo
 
 ## Requirement
 This library is tested only with react.
