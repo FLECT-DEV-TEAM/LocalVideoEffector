@@ -223,7 +223,7 @@ export class LocalVideoEffectors{
         return this.inputVideoCanvas2.captureStream()
     }
 
-    doEffect = (width:number, height:number) =>{
+    doEffect = (width:number, height:number, outWidth:number=-1, outHeight:number=-1) =>{
         if (this._cameraEnabled === false) {
             const ctx = this.inputVideoCanvas2.getContext("2d")!
             this.inputVideoCanvas2.width = 6
@@ -285,6 +285,8 @@ export class LocalVideoEffectors{
                     // cv_asm.imshow(canvas, claheDst);
                     // src.delete(); equalDst.delete(); claheDst.delete(); clahe.delete();
                     
+
+                    //// (2-2) Generate Foreground(Virtual Foreground)
                     if(this._foregroundType===ForegroundType.Canny){
                         let src = cv_asm.imread(canvas);
                         let dst = new cv_asm.Mat();
@@ -350,13 +352,22 @@ export class LocalVideoEffectors{
                 // this.virtualBGCanvas.height = maskedImage.height
                 const ctx = this.virtualBGCanvas.getContext("2d")!
                 if(this._backgroundType === BackgroundType.Image){
-                    this.virtualBGCanvas.width  = this.virtualBGImage.width
-                    this.virtualBGCanvas.height = this.virtualBGImage.height
+                    if(outWidth < 0  || outHeight < 0){
+                        this.virtualBGCanvas.width  = this.virtualBGImage.width
+                        this.virtualBGCanvas.height = this.virtualBGImage.height
+                    }else{
+
+                    }
                     ctx.drawImage(this.virtualBGImage, 0, 0, this.virtualBGCanvas.width, this.virtualBGCanvas.height)
                 }else if(this._backgroundType === BackgroundType.Stream){
                     try{
-                        this.virtualBGCanvas.width  = this._virtualBackgroundMediaStream?.getVideoTracks()[0].getSettings().width!
-                        this.virtualBGCanvas.height = this._virtualBackgroundMediaStream?.getVideoTracks()[0].getSettings().height!
+                        if(outWidth < 0  || outHeight < 0){
+                            this.virtualBGCanvas.width  = this._virtualBackgroundMediaStream?.getVideoTracks()[0].getSettings().width!
+                            this.virtualBGCanvas.height = this._virtualBackgroundMediaStream?.getVideoTracks()[0].getSettings().height!
+                        }else{
+                            this.virtualBGCanvas.width  = outWidth
+                            this.virtualBGCanvas.height = outHeight    
+                        }
                     }catch(exception){
 
                     }
@@ -366,7 +377,6 @@ export class LocalVideoEffectors{
                     this.virtualBGCanvas.height = this.virtualBGImage.height
                     ctx.drawImage(this.virtualBGImage, 0, 0, this.virtualBGCanvas.width, this.virtualBGCanvas.height)
                 }
-                const bgImageData = ctx.getImageData(0, 0, this.virtualBGCanvas.width, this.virtualBGCanvas.height)
                 //// (2-4) merge background and mask
                 const pixelData = new Uint8ClampedArray(segmentation.width * segmentation.height * 4)
                 const fgImageData = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height)
@@ -393,7 +403,7 @@ export class LocalVideoEffectors{
                 const imageData = new ImageData(pixelData, segmentation.width, segmentation.height);
 
 
-                //// (2-5) resize foreground
+                //// (2-5) create foreground Canvas
                 const resizeCanvas  = document.createElement("canvas")
                 resizeCanvas.width  = imageData.width
                 resizeCanvas.height = imageData.height
