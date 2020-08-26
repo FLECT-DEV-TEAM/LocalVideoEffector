@@ -197,6 +197,7 @@ export class LocalVideoEffectors{
 
     setVideoElement = (videoElement:HTMLVideoElement)=>{
         this.inputVideoElement = videoElement
+        this._inputVideoStream = videoElement.srcObject as MediaStream
     }
 
     setMediaStream = async(stream:MediaStream) =>{
