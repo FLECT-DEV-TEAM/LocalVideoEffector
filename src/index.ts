@@ -179,7 +179,7 @@ export class LocalVideoEffectors{
                 this.inputVideoElement!.srcObject = stream
                 this.inputVideoElement!.play()
                 this._inputVideoStream = stream 
-                return new Promise((resolve, reject) => {
+                return new Promise<void>((resolve, reject) => {
                     this.inputVideoElement!.onloadedmetadata = () => {
                         resolve();
                     };
@@ -207,7 +207,7 @@ export class LocalVideoEffectors{
         this.inputVideoElement!.loop = true
         this.inputVideoElement!.play()
         this._inputVideoStream = stream
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             this.inputVideoElement!.onloadedmetadata = () => {
                 resolve();
             };

@@ -3,11 +3,13 @@ const path = require('path');
 module.exports = {
     mode: 'development',
     entry: './src/index.ts', // <-- (1)
-    node: {
-        fs: 'empty'
-      },   
     resolve: {
         extensions: [".ts", ".js"],
+        fallback: { 
+            "path": false,
+            "crypto": false,
+            "fs": false
+        }
     },
     module: {
         rules: [
